@@ -17,8 +17,8 @@ BOWTIE2_REF=$2      # Path to ref file
 OUTPUT_DIR=$3       # Directory for output BAM files
 
 # Check if OUTPUT_DIR exists, if not create it
-if [ ! -d "$OUTPUT_DIR" ]; then
-    mkdir -p $OUTPUT_DIR
+if [ ! -e "$OUTPUT_DIR" ]; then
+    mkdir -p $(realpath $OUTPUT_DIR)
     echo "$OUTPUT_DIR not found, creating new directory."
 fi
 
@@ -49,10 +49,10 @@ for R1 in $READS_DIR/*1.fastq*; do
     for filename in $R1; do
         if [[ $filename == *R1.fastq.gz ]]; then
             # Remove the *_R1.fastq.gz part
-            SAMPLE_NAME=$READS_DIR/${filename%_R1.fastq*}
+            SAMPLE_NAME=$(basename ${filename%_R1.fastq*})
         else
             # Remove the *_1.fastq.gz part
-            SAMPLE_NAME=$READS_DIR/${filename%_1.fastq*}
+            SAMPLE_NAME=$(basename ${filename%_1.fastq*})
         fi
     done
 
