@@ -4,7 +4,6 @@
 params.reads_dir = null
 params.bowtie2_ref = null
 params.output_dir = null
-params.output_csv = 'binned_data.csv'
 
 // bowtie2
 process BOWTIE2 {
@@ -15,14 +14,18 @@ process BOWTIE2 {
 
     output:
     path "${bowtie2_ref.simpleName}.*.bt2", emit: index_files
-    path "*.bam*", emit: bam_file
+    path "*.bam", emit: bam_file
+    path "*.bai", emit: bam_index_file
 
     publishDir file(params.bowtie2_ref).parent.toString(), 
         mode: 'copy', 
         pattern: "*.bt2"
     publishDir file(params.output_dir).toString(), 
         mode: 'copy',
-        pattern: "*.bam*"
+        pattern: "*.bam"
+    publishDir file(params.output_dir).toString(), 
+        mode: 'copy',
+        pattern: "*.bai"
 
     script:
     """
@@ -31,14 +34,28 @@ process BOWTIE2 {
     """
 }
 
-// bin aligned reads
+// tabulate aligned reads
 process ALIGNMENT_STATS {
     input:
     path bam_file
-    path output_dir
+    path bam_index_file
 
     output:
-    path "${params.output_csv}"
+    path "*.parquet", emit: readlist 
+
+    script:
+    """
+    python3 ~/webber_group/Gregory_Wickham/psoraseq/psoraseq/bin/python_scripts/get_alignment_stats.py $bam_file
+    """
+}
+
+// bin reads
+process BIN_READS {
+    input:
+    path readlist
+
+    output:
+    path "*.csv", emit: binned
 
     publishDir file(params.output_dir).toString(), 
         mode: 'copy',
@@ -46,12 +63,25 @@ process ALIGNMENT_STATS {
 
     script:
     """
-    python3 ~/webber_group/Gregory_Wickham/psoraseq/psoraseq/bin/python_scripts/get_alignment_stats.py \
-        $bam_file ${params.output_csv}
+    python3 ~/webber_group/Gregory_Wickham/psoraseq/psoraseq/bin/python_scripts/bin_aligned_reads.py $readlist
     """
 }
 
+// define workflow
 workflow {
-    bam_output = BOWTIE2(file(params.reads_dir), file(params.bowtie2_ref), file(params.output_dir))
-    ALIGNMENT_STATS(bam_output.bam_file, file(params.output_dir))
+    bam_output = BOWTIE2(
+        file(params.reads_dir), 
+        file(params.bowtie2_ref), 
+        file(params.output_dir)
+    )
+
+    tabular_alignment = ALIGNMENT_STATS(
+        bam_output.bam_file,
+        bam_output.bam_index_file
+    )
+
+    BIN_READS(
+        tabular_alignment.readlist
+    )
 }
+
