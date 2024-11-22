@@ -19,18 +19,18 @@ OUTPUT_DIR=$3        # Directory for output BAM files
 # Check if OUTPUT_DIR exists, if not create it
 if [ ! -e "$OUTPUT_DIR" ]; then
     mkdir -p $(realpath $OUTPUT_DIR)
-    echo "$OUTPUT_DIR not found, creating new directory." >&2
+    echo "$OUTPUT_DIR not found, creating new directory."
 fi
 
 # Create the Bowtie2 ref index if not already created
 if [ -f "${BOWTIE2_REF}.1.bt2" ]; then
-    echo "Bowtie2 index $(basename $BOWTIE2_REF) found" >&2
+    echo "Bowtie2 index $(basename $BOWTIE2_REF) found"
 elif [ -f "${BOWTIE2_REF%.f*}".f* ]; then
-    echo "Creating new index $BOWTIE2_REF" >&2
+    echo "Creating new index $BOWTIE2_REF"
     bowtie2-build $BOWTIE2_REF ${BOWTIE2_REF%.f*}
     BOWTIE2_REF="${BOWTIE2_REF%.f*}"
 else 
-    echo "ERROR: File $BOWTIE2_REF not found. Exiting" >&2
+    echo "ERROR: File $BOWTIE2_REF not found. Exiting"
     exit
 fi
 
@@ -39,10 +39,10 @@ for R1 in $READS_DIR/*1.fastq*; do
     # Check R2 pairmate exsits, if not write to errors.txt/.,
     R2=${R1/1.fastq/2.fastq}  # Get R2 file name from R1
     if [ ! -f "$R2" ]; then
-        echo "ERROR: No R2 file for $(basename $R1). Skipping read." >&2
+        echo "ERROR: No R2 file for $(basename $R1). Skipping read."
         > $OUTPUT_DIR/errors.txt
-        echo "$R1 missing R2 pairmate" >> $OUTPUT_DIR/errors.txt >&2
-        exit 1
+        echo "$R1 missing R2 pairmate" >> $OUTPUT_DIR/errors.txt
+        continue
     fi
 
     # Extract sample name (e.g., sample from sample_R1.fastq)
@@ -57,14 +57,13 @@ for R1 in $READS_DIR/*1.fastq*; do
     done
 
     # Align reads and generate BAM file
-    echo "Aligning $SAMPLE_NAME with bowtie2" >&2
+    echo "Aligning $SAMPLE_NAME with bowtie2"
     bowtie2 \
         -x $BOWTIE2_REF \
         -1 $R1 -2 $R2 \
         | samtools view -bS - \
-            | samtools sort -o "$SAMPLE_NAME.bam"
+        | samtools sort -o "$SAMPLE_NAME.bam"
     samtools index "$SAMPLE_NAME.bam"
 
-
-    echo "Alignment complete. Output written to $OUTPUT_DIR/$SAMPLE_NAME.bam" >&2
+    echo "Alignment complete. Output written to $OUTPUT_DIR/$SAMPLE_NAME.bam"
 done
