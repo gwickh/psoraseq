@@ -29,7 +29,7 @@ process BOWTIE2 {
 
     script:
     """
-    bash ~/webber_group/Gregory_Wickham/psoraseq/psoraseq/bin/shell_scripts/bowtie2_alignment.sh \
+    bash ${projectDir}/bin/shell_scripts/bowtie2_alignment.sh \
         $reads_dir $bowtie2_ref $output_dir
     """
 }
@@ -45,7 +45,7 @@ process ALIGNMENT_STATS {
 
     script:
     """
-    python3 ~/webber_group/Gregory_Wickham/psoraseq/psoraseq/bin/python_scripts/get_alignment_stats.py $bam_file
+    python3 ${projectDir}/bin/python_scripts/get_alignment_stats.py $bam_file
     """
 }
 
@@ -63,7 +63,7 @@ process BIN_READS {
 
     script:
     """
-    python3 ~/webber_group/Gregory_Wickham/psoraseq/psoraseq/bin/python_scripts/bin_aligned_reads.py $readlist
+    python3 ${projectDir}/bin/python_scripts/bin_aligned_reads.py $readlist
     """
 }
 
