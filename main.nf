@@ -4,6 +4,7 @@
 params.reads_dir = null
 params.bowtie2_ref = null
 params.output_dir = null
+params.skip_alignment = false  // Default: run alignment
 
 // bowtie2
 process BOWTIE2 {
@@ -69,19 +70,29 @@ process BIN_READS {
 
 // define workflow
 workflow {
-    bam_output = BOWTIE2(
-        file(params.reads_dir), 
-        file(params.bowtie2_ref), 
-        file(params.output_dir)
-    )
+    if (!params.skip_alignment) {
+        bam_output = BOWTIE2(
+            file(params.reads_dir), 
+            file(params.bowtie2_ref), 
+            file(params.output_dir)
+        )
 
-    tabular_alignment = ALIGNMENT_STATS(
-        bam_output.bam_file,
-        bam_output.bam_index_file
-    )
+        tabular_alignment = ALIGNMENT_STATS(
+            bam_output.bam_file,
+            bam_output.bam_index_file
+        )
+    } else {
+        // Assume BAM and BAI files are already in output_dir
+        bam_files = file("${params.output_dir}/*.bam")
+        bai_files = file("${params.output_dir}/*.bai")
+        
+        tabular_alignment = ALIGNMENT_STATS(
+            bam_files,
+            bai_files
+        )
+    }
 
     BIN_READS(
         tabular_alignment.readlist
     )
 }
-
