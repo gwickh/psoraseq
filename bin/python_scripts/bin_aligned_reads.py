@@ -72,9 +72,6 @@ def bin_aligned_reads(datafiles):
     print(f"Data has been successfully exported to binned_reads.csv")
     
 def main():
-    """
-    Main function to handle command-line arguments and process input files.
-    """
     # Set up command-line argument parsing
     parser = argparse.ArgumentParser(
         description='Bin reads data from multiple Parquet files and export to CSV.'
