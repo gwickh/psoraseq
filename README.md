@@ -7,6 +7,7 @@ Usage:
 
     Skip alignment and run downstream processes:
         nextflow run psoraseq/main.nf --skip_alignment --output_dir <output_directory>
+
 Options:
     --reads_dir       Path to directory containing paired reads.
     --bowtie2_ref     Path to Bowtie2 index or reference .fasta file to make new index
@@ -16,3 +17,4 @@ Options:
 
 Example:
     nextflow run psoraseq/main.nf --reads_dir reads/ --bowtie2_ref e_coli_K12 --output_dir output_test
+```
