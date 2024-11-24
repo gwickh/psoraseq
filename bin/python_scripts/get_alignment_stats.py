@@ -7,7 +7,6 @@
 # Description:      Tabulate read lengths and positions of sorted indexed .bam files into .parquet format
 
 import sys
-import csv
 import pysam
 import numpy as np
 import pandas as pd
