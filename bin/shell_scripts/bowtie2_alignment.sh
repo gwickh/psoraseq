@@ -9,9 +9,9 @@
 set -exuo pipefail
 
 # Set variables 
-READS_DIR=$1        # Directory containing read files
-BOWTIE2_REF=$2      # Path to ref file
-OUTPUT_DIR=$3       # Directory for output BAM files
+READS_DIR=$(realpath $1)         # Directory containing read files
+BOWTIE2_REF=$(realpath $2)       # Path to ref file
+OUTPUT_DIR=$(realpath $3)        # Directory for output BAM files
 
 # Check if OUTPUT_DIR exists, if not create it
 if [ ! -e "$OUTPUT_DIR" ]; then
@@ -20,8 +20,8 @@ if [ ! -e "$OUTPUT_DIR" ]; then
 fi
 
 # Create the Bowtie2 ref index if not already created
-if [ -f "${BOWTIE2_REF}.1.bt2" ]; then
-    echo "Bowtie2 index $(basename $BOWTIE2_REF) found"
+if [ -f "${BOWTIE2_REF}".1.bt2 ]; then
+    echo "Bowtie2 index $($BOWTIE2_REF) found"
 elif [ -f "${BOWTIE2_REF%.f*}".f* ]; then
     echo "Creating new index $BOWTIE2_REF"
     bowtie2-build $BOWTIE2_REF ${BOWTIE2_REF%.f*}
