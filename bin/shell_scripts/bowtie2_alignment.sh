@@ -8,13 +8,10 @@
 # Exit script on error
 set -exuo pipefail
 
-source "$(sudo find ~ -maxdepth 4 -name conda.sh)" #find path to conda base environment
-conda activate bowtie2
-
 # Set variables 
 READS_DIR=$1        # Directory containing read files
 BOWTIE2_REF=$2      # Path to ref file
-OUTPUT_DIR=$3        # Directory for output BAM files
+OUTPUT_DIR=$3       # Directory for output BAM files
 
 # Check if OUTPUT_DIR exists, if not create it
 if [ ! -e "$OUTPUT_DIR" ]; then

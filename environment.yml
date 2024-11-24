@@ -1,0 +1,15 @@
+name: psoraseq_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3
+  - bowtie2
+  - samtools
+  - pip
+  - pip:
+      - pyarrow
+      - pandas
+      - numpy
+      - pysam

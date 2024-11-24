@@ -31,6 +31,8 @@ if (params.help) {
 
 // bowtie2
 process BOWTIE2 {
+    conda "${projectDir}/environment.yml"
+
     input:
     path reads_dir
     path bowtie2_ref
@@ -60,6 +62,8 @@ process BOWTIE2 {
 
 // tabulate aligned reads
 process ALIGNMENT_STATS {
+    conda "${projectDir}/environment.yml"
+    
     input:
     path bam_file
     path bam_index_file
@@ -75,6 +79,8 @@ process ALIGNMENT_STATS {
 
 // bin reads
 process BIN_READS {
+    conda "${projectDir}/environment.yml"
+
     input:
     path readlist
 
