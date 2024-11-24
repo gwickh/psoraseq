@@ -1,12 +1,5 @@
 #!/usr/bin/env nextflow
 
-// parameters
-params.reads_dir = null
-params.bowtie2_ref = null
-params.output_dir = null
-params.skip_alignment = false   // Default: run alignment
-params.help = false             // Default: do not display help
-
 // Display help message
 if (params.help) {
     println """
