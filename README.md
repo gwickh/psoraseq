@@ -1,6 +1,16 @@
 # psoraseq
 Pipeline for psoralen sequencing analysis
 ```
+Installation:
+    sudo apt update
+    sudo apt install -y openjdk-11-jdk
+
+    wget -qO- https://get.nextflow.io | bash
+    sudo mv nextflow /usr/local/bin/
+    nextflow -version
+    
+    git clone https://github.com/gwickh/psoraseq.git
+
 Usage:
     Run the pipeline with alignment:
         nextflow run psoraseq/main.nf --reads_dir <directory_with_reads> --bowtie2_ref <path_to_index> --output_dir <output_directory> --ori_centric_offset <ori_position>
