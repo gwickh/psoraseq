@@ -1,6 +1,6 @@
 # psoraseq
 Pipeline for psoralen sequencing analysis
-
+```
 Usage:
     Run the pipeline with alignment:
         nextflow run psoraseq/main.nf --reads_dir <directory_with_reads> --bowtie2_ref <path_to_index> --output_dir <output_directory>
