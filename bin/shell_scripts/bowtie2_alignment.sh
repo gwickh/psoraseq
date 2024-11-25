@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-#author:    :Gregory Wickham
-#date:      :20241119
-#version    :1.1.
-#desc       :Align reads against reference
-#usage		:bash bowtie2_alignment.sh
+#author:        :Gregory Wickham
+#date:          :20241119
+#version        :1.2.
+#date modified: :20241125
+#desc           :Align reads against reference with Bowtie2
+#usage		    :bash bowtie2_alignment.sh <reads_dir> <bowtie2_index(.fasta)> <outdir>
 #===========================================================================================================
 # Exit script on error
 set -exuo pipefail
