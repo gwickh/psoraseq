@@ -13,3 +13,7 @@ dependencies:
       - pandas
       - numpy
       - pysam
+      - scipy
+      - seaborn
+      - matplotlib
+      - argparse
