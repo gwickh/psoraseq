@@ -21,6 +21,7 @@ fi
 
 # Create the Bowtie2 ref index if not already created
 if [ -f "${BOWTIE2_REF}".1.bt2 ]; then
+    cp "${BOWTIE2_REF}".*.bt2 . #copy index file to nextflow workdir
     echo "Bowtie2 index $($BOWTIE2_REF) found"
 elif [ -f "${BOWTIE2_REF%.f*}".f* ]; then
     echo "Creating new index $BOWTIE2_REF"
