@@ -9,16 +9,18 @@ if (params.help) {
 
         Skip alignment and run downstream processes:
             nextflow run psoraseq/main.nf --skip_alignment --output_dir <output_directory>
+
     Options:
         --reads_dir             Path to directory containing paired reads.
         --bowtie2_ref           Path to Bowtie2 index or reference .fasta file to make new index
         --output_dir            Path to output directory.
         --ori_centric_offset    (OPTIONAL) Numeric offset to make coordinates origin-centric (default: 0).
-        --skip_alignment        (OPTIONAL) Skip alignment step and use precomputed BAM/BAI files in output directory.
+        --skip_alignment        (OPTIONAL) Skip alignment step and use precomputed BAM/BAI files in output directory (default = 0).
+        --smoothing_window     (OPTIONAL) Smooth trendline with binsized sliding window (default: 1)
         --help                  Display help message.
     
     Example:
-        nextflow run psoraseq/main.nf --reads_dir reads/ --bowtie2_ref e_coli_K12 --output_dir output_test
+        nextflow run psoraseq/main.nf --reads_dir reads/ --bowtie2_ref e_coli_K12 --output_dir output_test --ori_centric_offset 3925744 --smoothing_window 100
     """
     exit 0
 }
@@ -55,7 +57,7 @@ process BOWTIE2 {
 }
 
 // tabulate aligned reads
-process ALIGNMENT_STATS {
+process TABULATE_ALIGNMENT {
     conda "${projectDir}/environment.yml"
     
     input:
@@ -111,6 +113,27 @@ process NORMALISE_READS {
     """
 }
 
+// generate plots
+process MAKE_PLOTS {
+    conda "${projectDir}/environment.yml"
+
+    input:
+    path binned
+    path binned_norm
+
+    output:
+    path "*.png", emit: plots
+
+    publishDir file(params.output_dir).toString(), 
+        mode: 'copy',
+        pattern: "*.png"
+
+    script:
+    """
+    python3 ${projectDir}/bin/python_scripts/plot_functions.py $binned $binned_norm --smoothing_window $params.smoothing_window
+    """
+}
+
 // define workflow
 workflow {
     if (!params.skip_alignment) {
@@ -120,7 +143,7 @@ workflow {
             file(params.output_dir)
         )
 
-        tabular_alignment = ALIGNMENT_STATS(
+        tabular_alignment = TABULATE_ALIGNMENT(
             bam_output.bam_file,
             bam_output.bam_index_file
         )
@@ -129,18 +152,19 @@ workflow {
         bam_files = file("${params.output_dir}/*.bam")
         bai_files = file("${params.output_dir}/*.bai")
         
-        tabular_alignment = ALIGNMENT_STATS(
+        tabular_alignment = TABULATE_ALIGNMENT(
             bam_files,
             bai_files
         )
     }
 
-    binning = BIN_READS(
-        tabular_alignment.readlist
-    )
+    binning = BIN_READS(tabular_alignment.readlist)
 
-    NORMALISE_READS(
-        binning.binned
+    normalisation = NORMALISE_READS(binning.binned)
+
+    MAKE_PLOTS(
+        binning.binned, 
+        normalisation.binned_norm
     )
 
 }

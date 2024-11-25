@@ -2,31 +2,38 @@
 # Filename:         plot_functions.py
 # Author:           Gregory Wickham
 # Created:          2024-11-25
-# Version:          1.0
+# Version:          1.1
 # Date modified:    2024-11-25
-# Description:      Visualise read log2FC and Jemsen-Shannon Divergence
+# Description:      Visualise read log2FC and Jensen-Shannon Divergence
 
+import argparse
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
 from scipy.special import rel_entr
 
-def plot_log2fc(
-    normalised_file_path, 
-    output_path="log2fc_by_pos.png",
-    smoothing_window=200
-    ):
+def plot_log2fc(normalised_file_path, smoothing_window=100):
     """
     Generates plot showing log2 fold change by position from log2FC_binned_reads.csv.
     """
-    
-    df = pd.read_csv(normalised_file_path)     # Read the CSV file
-    bins = df['Bins']    # Extract the 'bin' column for the x-axis
+    df = pd.read_csv(normalised_file_path)  # Read the CSV file
+    bins = df['Bins']  # Extract the 'bin' column for the x-axis
 
-    plt.figure(figsize=(12, 6))  # Set figure size
     for column in df.columns[1:]:
-        smoothed_values = df[column].rolling(window=smoothing_window, center=True).mean()
+        # Wrap data by appending and prepending data for smoothing
+        padded_data = np.concatenate(
+            (df[column].iloc[-smoothing_window:].values, 
+            df[column].values, 
+            df[column].iloc[:smoothing_window].values)
+        )
+        smoothed_padded_values = pd.Series(padded_data)\
+            .rolling(
+                window = smoothing_window, 
+                center = True)\
+            .mean()
+        smoothed_values = smoothed_padded_values[smoothing_window:-smoothing_window].values
+
         plt.plot(bins, smoothed_values, label=f"{column}")
 
     # Add labels, title, and legend
@@ -38,14 +45,12 @@ def plot_log2fc(
 
     # Save and show the plot
     plt.tight_layout()
-    plt.savefig(output_path)
-    print(f"Smoothed plot saved to {output_path}")
+    plt.savefig("log2fc_by_pos.png")
+    print(f"Smoothed plot saved to log2fc_by_pos.png")
     plt.show()
-    
-def plot_JS_div(
-    raw_file_path,
-    output_path="jensen_shannon_divergence.png",
-    ):
+
+
+def plot_JS_div(raw_file_path):
     """
     Normalise data, calculate JS divergence and plot data from binned_reads.csv.
     """
@@ -54,21 +59,19 @@ def plot_JS_div(
     def jensen_shannon_divergence(P, Q):
         # M is the average of the two distributions
         M = 0.5 * (P + Q)
-        
+
         # KL divergence of P from M and Q from M
         kl_p_m = np.sum(rel_entr(P, M))
         kl_q_m = np.sum(rel_entr(Q, M))
-        
+
         # Jensen-Shannon divergence
         return 0.5 * (kl_p_m + kl_q_m)
 
     # Load and normalize the data
     df = pd.read_csv(raw_file_path)
-
     counts_data = df.drop(columns=['Bins'])
-    normalized_data = counts_data/ counts_data.sum(axis=0)
+    normalized_data = counts_data / counts_data.sum(axis=0)
     col_names = list(counts_data.columns.values)
-    
 
     # Initialize an empty similarity matrix
     n_samples = normalized_data.shape[1]
@@ -88,11 +91,11 @@ def plot_JS_div(
     # Generate the heatmap
     plt.figure(figsize=(10, 8))  # Adjust size to fit your data
     sns.heatmap(
-        js_matrix_df, 
-        annot=True, 
-        cmap="coolwarm", 
-        linewidths=0.5, 
-        vmin=0, 
+        js_matrix_df,
+        annot=True,
+        cmap="coolwarm",
+        linewidths=0.5,
+        vmin=0,
         vmax=np.log(2)
     )
     plt.title("Jensen-Shannon Divergence Between Samples")
@@ -100,67 +103,73 @@ def plot_JS_div(
     plt.ylabel("Sample")
     plt.xticks(rotation=45, ha='right')
     plt.yticks(rotation=0, ha='right')
-    
+
     # Save and show the plot
     plt.tight_layout()
-    plt.savefig(output_path)
-    print(f"Jensen-Shannon divergence matrix saved to {output_path}")
+    plt.savefig("jensen_shannon_divergence.png")
+    print(f"Jensen-Shannon divergence matrix saved to jensen_shannon_divergence.png")
     plt.show()
 
-# Generate boxplot showing distribution of raw reads
+
 def raw_read_boxplot(raw_file_path):
+    """
+    Generate a boxplot showing the distribution of raw reads.
+    """
     raw_df = pd.read_csv(raw_file_path)
-    raw_df = pd.read_csv("~/webber_group/Gregory_Wickham/psoraseq/bowtie2/output_test/binned_reads.csv")
     raw_df = raw_df.melt(id_vars=['Bins'], var_name='sample', value_name='read_count')
+    plt.figure(figsize=(12, 6))
     sns.boxplot(
-        raw_df,
+        data = raw_df,
         y = 'read_count',
         x = 'sample',
-        inner = None,
-        linecolor = 'black',
-        color = 'white', 
-        width = 0.5
+        color = 'white',
+        width = 0.5,
+        linewidth = 0.8
     )
     sns.violinplot(
-        raw_df,
+        data = raw_df,
         y = 'read_count',
         x = 'sample',
-        inner = None,
-        linecolor = 'black',
-        color = 'white', 
-        linewidth = 1
+        color = 'white',
+        linewidth = 1,
+        inner = None
     )
     plt.title("Raw Count of Reads per Bin")
     plt.xlabel("Sample")
     plt.ylabel("Read Count")
+    plt.tight_layout()
+    plt.savefig("raw_read_boxplot.png")
+    print("Boxplot saved to raw_read_boxplot.png")
+    plt.show()
 
-# Generate boxplot showing distribution of normalised reads
-def raw_read_boxplot(raw_file_path):
-    normalised_df = pd.read_csv(raw_file_path)
-    normalised_df = pd.read_csv("~/webber_group/Gregory_Wickham/psoraseq/bowtie2/output_test/log2FC_binned_reads.csv")
-    normalised_df = normalised_df.melt(id_vars=['Bins'], var_name='sample', value_name='read_count')
-    sns.boxplot(
-        normalised_df,
-        y = 'read_count',
-        x = 'sample',
-        linecolor = 'black',
-        color = 'white', 
-        width = 0.5
+
+def main():
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description="Visualize read log2FC and Jensen-Shannon Divergence.")
+    parser.add_argument(
+        "raw_file_path", 
+        help = "Path to the binned_reads.csv")
+    parser.add_argument(
+        "normalised_file_path", 
+        help = "Path to log2FC_binned_reads.csv")
+    parser.add_argument(
+        "--smoothing_window", 
+        type=int, 
+        default=1, 
+        help="Smoothing window size for log2FC plot."
+        )
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Generate plots
+    plot_log2fc(
+        args.normalised_file_path, 
+        smoothing_window=args.smoothing_window
     )
-    sns.violinplot(
-        normalised_df,
-        y = 'read_count',
-        x = 'sample',
-        inner = None,
-        linecolor = 'black',
-        color = 'white', 
-        linewidth = 1
-    )
-    plt.title("Normalised log 2 Fold Change per Bin")
-    plt.xlabel("Sample")
-    plt.ylabel("log 2 Fold Change")
+    plot_JS_div(args.raw_file_path)
+    raw_read_boxplot(args.raw_file_path)
 
-# Generate plots
-plot_log2fc("~/webber_group/Gregory_Wickham/psoraseq/bowtie2/output_test/log2FC_binned_reads.csv")
-plot_JS_div("~/webber_group/Gregory_Wickham/psoraseq/bowtie2/output_test/binned_reads.csv")
 
+if __name__ == "__main__":
+    main()
