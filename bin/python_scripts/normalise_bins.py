@@ -23,12 +23,11 @@ def normalise_bins(binned_reads):
   
     means = data.mean()                         # Compute the mean for each column
     log2_fold_change = np.log2(data / means)    # Calculate the log2 fold change from the mean for each value
-    log2_fold_change.insert(0, 'Bins', bins)     # Add the 'bin' column back to the transformed data
+    log2_fold_change.insert(0, 'Bins', bins)     # Add the 'Bins' column back to the transformed data
 
     # Save the transformed data to a new CSV file
-    output_file = "log2FC_binned_reads.csv"
-    log2_fold_change.to_csv(output_file, index=False)
-    print(f"Transformed data saved to {output_file}")
+    log2_fold_change.to_csv("log2FC_binned_reads.csv", index=False)
+    print(f"Normalised data saved to log2FC_binned_reads.csv")
 
 def main():
     # Set up command-line argument parsing
