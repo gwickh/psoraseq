@@ -91,6 +91,26 @@ process BIN_READS {
     """
 }
 
+// normalise reads
+process NORMALISE_READS {
+    conda "${projectDir}/environment.yml"
+
+    input:
+    path binned
+
+    output:
+    path "*.csv", emit: binned_norm
+
+    publishDir file(params.output_dir).toString(), 
+        mode: 'copy',
+        pattern: "*.csv"
+
+    script:
+    """
+    python3 ${projectDir}/bin/python_scripts/normalise_bins.py $binned
+    """
+}
+
 // define workflow
 workflow {
     if (!params.skip_alignment) {
@@ -115,7 +135,12 @@ workflow {
         )
     }
 
-    BIN_READS(
+    binning = BIN_READS(
         tabular_alignment.readlist
     )
+
+    NORMALISE_READS(
+        binning.binned
+    )
+
 }
