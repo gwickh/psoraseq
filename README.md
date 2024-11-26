@@ -3,7 +3,7 @@ Pipeline for psoralen sequencing analysis
 ```
 Installation:
     sudo apt update
-    sudo apt install -y openjdk-11-jdk
+    sudo apt-get install -y openjdk-11-jdk build-essential gcc zlib1g-dev make
 
     wget -qO- https://get.nextflow.io | bash
     sudo mv nextflow /usr/local/bin/
