@@ -40,7 +40,7 @@ def process_bam_file(bam_path, ori_centric_offset):
             # Make origin centric
             if ori_centric_offset:
                 read_start_pos = ((read_start_pos - ori_centric_offset + (bamfile.lengths[0]/2)) % bamfile.lengths[0]) - (bamfile.lengths[0]/2)
-                read_end_pos = ((read_start_pos - ori_centric_offset + (bamfile.lengths[0]/2)) % bamfile.lengths[0]) - (bamfile.lengths[0]/2)
+                read_end_pos = ((read_end_pos - ori_centric_offset + (bamfile.lengths[0]/2)) % bamfile.lengths[0]) - (bamfile.lengths[0]/2)
 
             # Append data: [first, last, bases, midpoint]
             midpoint = round((read_start_pos + read_end_pos) / 2)
