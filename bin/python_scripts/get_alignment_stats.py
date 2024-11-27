@@ -24,18 +24,17 @@ def process_bam_file(bam_path, ori_centric_offset):
     
     # Fetch reads from the first reference
     for read in bamfile.fetch(bamfile.references[0], 0, bamfile.lengths[0]):
-        if read.template_length != 0:  # Get origin and length
-            alignment_start = int(read.reference_start) + 1
-            read_length = int(read.template_length)
+        # if read.template_length != 0:  # Remove reads with 0 distance between read pairs
+            alignment_start = int(read.reference_start)
+            read_length = int(read.query_length)
             
             # Get read start/end pos
             if read_length < 0:                             # Pos if read length is < 0 (3')
-                print(read_length) 
-                read_start_pos = alignment_start + read_length
+                read_start_pos = alignment_start + read_length - 1
                 read_end_pos = alignment_start
             else:                                           # Pos if read length is > 0 (5')
                 read_start_pos = alignment_start
-                read_end_pos = alignment_start + read_length
+                read_end_pos = alignment_start + read_length - 1
 
             # Make origin centric
             if ori_centric_offset:
