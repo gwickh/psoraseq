@@ -44,14 +44,12 @@ def bin_aligned_reads(datafiles):
         raw_data[:len(midpoints), i] = midpoints
         
     # Define bin size and create bins
-    binsize = 1000
-    lowbin = np.ceil(np.nanmin(raw_data) / binsize) * binsize
-    highbin = np.floor(np.nanmax(raw_data) / binsize) * binsize
+    maxbin = np.floor(np.nanmax(raw_data) / 1000) * 1000
     
     bins = np.arange(
-        lowbin, 
-        highbin + binsize, 
-        binsize
+        0, 
+        maxbin + 1000, 
+        1000
     )
     numbins = len(bins)
     
