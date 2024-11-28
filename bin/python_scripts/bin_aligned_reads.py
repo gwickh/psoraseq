@@ -44,11 +44,12 @@ def bin_aligned_reads(datafiles):
         raw_data[:len(midpoints), i] = midpoints
         
     # Define bin size and create bins
-    maxbin = np.floor(np.nanmax(raw_data) / 1000) * 1000
+    maxbin = np.ceil(np.nanmax(raw_data) / 1000) * 1000
+    minbin = np.floor(np.nanmin(raw_data) / 1000) * 1000
     
     bins = np.arange(
-        0, 
-        maxbin + 1000, 
+        minbin,
+        maxbin, 
         1000
     )
     numbins = len(bins)
@@ -61,9 +62,9 @@ def bin_aligned_reads(datafiles):
     
     # Prepare header and data for export
     header = ['Bins'] + list(datafiles.keys())
-    binned_data = np.column_stack((bins[:-1], histtable))  # Exclude last bin for histtable
+    binned_data = np.column_stack((bins[:-1], histtable))  # Exclude last bin edge for histtable
 
-    # Convert data to DataFrame for easy export
+    # Convert data to DataFrame
     df = pd.DataFrame(binned_data, columns=header)
     df.to_csv("binned_reads.csv", index=False)
 
