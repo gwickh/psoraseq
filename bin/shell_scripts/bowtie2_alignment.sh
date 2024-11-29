@@ -46,11 +46,14 @@ for R1 in $READS_DIR/*1.fastq*; do
 
     # Extract sample name (e.g., sample from sample_R1.fastq)
     for filename in $R1; do
-        if [[ $filename == *R1.fastq.gz ]]; then
-            # Remove the *_R1.fastq.gz part
+        if [[ $filename == *R1.fastq* ]]; then
+            # Remove the *_R1.fastq* part
             SAMPLE_NAME=$(basename ${filename%_R1.fastq*})
+        elif [[ $filename == *R1_001.fastq* ]]; then
+            # Remove the *_R1.fastq* part
+            SAMPLE_NAME=$(basename ${filename%_R1_001.fastq*})
         else
-            # Remove the *_1.fastq.gz part
+            # Remove the *_1.fastq* part
             SAMPLE_NAME=$(basename ${filename%_1.fastq*})
         fi
     done
@@ -66,3 +69,4 @@ for R1 in $READS_DIR/*1.fastq*; do
 
     echo "Alignment complete. Output written to $OUTPUT_DIR/$SAMPLE_NAME.bam"
 done
+cp "${BOWTIE2_REF}".*.bt2 . #copy index file to nextflow workdir
