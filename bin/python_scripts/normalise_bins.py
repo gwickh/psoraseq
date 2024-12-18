@@ -6,7 +6,6 @@
 # Date modified:    2024-11-25
 # Description:      Normalise bins and transform to log2 fold change
 
-import os
 import argparse
 import numpy as np
 import pandas as pd
@@ -27,7 +26,7 @@ def normalise_bins(binned_reads):
 
     # Save the transformed data to a new CSV file
     log2_fold_change.to_csv("log2FC_binned_reads.csv", index=False)
-    print(f"Normalised data saved to log2FC_binned_reads.csv")
+    print("Normalised data saved to log2FC_binned_reads.csv")
 
 def main():
     # Set up command-line argument parsing

@@ -68,7 +68,7 @@ def bin_aligned_reads(datafiles):
     df = pd.DataFrame(binned_data, columns=header)
     df.to_csv("binned_reads.csv", index=False)
 
-    print(f"Data has been successfully exported to binned_reads.csv")
+    print("Data has been successfully exported to binned_reads.csv")
     
 def main():
     # Set up command-line argument parsing

@@ -46,7 +46,7 @@ def plot_log2fc(normalised_file_path, smoothing_window=100):
     # Save and show the plot
     plt.tight_layout()
     plt.savefig("log2fc_by_pos.png")
-    print(f"Smoothed plot saved to log2fc_by_pos.png")
+    print("Smoothed plot saved to log2fc_by_pos.png")
     plt.show()
 
 
@@ -107,7 +107,7 @@ def plot_JS_div(raw_file_path):
     # Save and show the plot
     plt.tight_layout()
     plt.savefig("jensen_shannon_divergence.png")
-    print(f"Jensen-Shannon divergence matrix saved to jensen_shannon_divergence.png")
+    print("Jensen-Shannon divergence matrix saved to jensen_shannon_divergence.png")
     plt.show()
 
 
