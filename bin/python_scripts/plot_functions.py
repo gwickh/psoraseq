@@ -3,8 +3,8 @@
 # Author:           Gregory Wickham
 # Created:          2024-11-25
 # Version:          1.2
-# Date modified:    2024-11-25
-# Description:      Visualise read log2FC (absolute and relative) and Jensen-Shannon Divergence
+# Date modified:    2025-01-06
+# Description:      Visualise read binsizes (absolute and relative) and Jensen-Shannon Divergence
 
 import argparse
 import matplotlib.pyplot as plt
@@ -15,14 +15,12 @@ from scipy.special import rel_entr
 
 def plot_log2fc(normalised_file_path, smoothing_window=100):
     """
-    Generates plot showing log2 fold change by position from log2FC_binned_reads.csv.
-    
-    The CSV file is expected to contain a 'Bins' column for the x-axis and other columns 
-    representing different samples or conditions.
+    Takes normalised readcounts and plots a moving average of the log2 fold change by position.
     """
-    df = pd.read_csv(normalised_file_path)  # Read the CSV file
+    df = pd.read_csv(normalised_file_path)
     bins = df['Bins']  # Extract the 'bin' column for the x-axis
 
+    plt.figure(figsize=(10, 6))
     for column in df.columns[1:]:
         # Wrap data by appending and prepending data for smoothing
         padded_data = np.concatenate(
@@ -30,41 +28,105 @@ def plot_log2fc(normalised_file_path, smoothing_window=100):
             df[column].values, 
             df[column].iloc[:smoothing_window].values)
         )
-        smoothed_padded_values = pd.Series(padded_data)\
-            .rolling(
-                window = smoothing_window, 
-                center = True)\
-            .mean()
-        smoothed_values = smoothed_padded_values[smoothing_window:-smoothing_window].values
-
+        padded_data = pd.DataFrame(padded_data)
+        
+        # Replace -inf values with NaN and interpolate to ignore them during smoothing
+        padded_data = padded_data.replace(-np.inf, np.nan)
+        interpolated_padded_values = padded_data.interpolate(
+            method='spline', 
+            order=3
+        ).rolling(
+            window=smoothing_window, 
+            center=True
+        ).mean()
+        smoothed_values = interpolated_padded_values[smoothing_window:-smoothing_window].values
         plt.plot(bins, smoothed_values, label=f"{column}")
-
-    # Add labels, title, and legend
+    
+    # Plot aesthetics
     plt.xlabel('Position (Mb)')
     plt.ylabel('Log2 Fold Change')
-    plt.title('Log2 Fold Change in Reads from Global Mean')
-    plt.legend(title='Columns', bbox_to_anchor=(1.04, 1), loc="upper left")
+    plt.title('Log2 Fold Change in Reads from Sample Mean')
+    plt.legend(title='Sample', bbox_to_anchor=(1.04, 1), loc="upper left")
     plt.grid(True, linestyle='--', alpha=0.6)
-
-    # Save and show the plot
     plt.tight_layout()
     plt.savefig("log2fc_by_pos.png")
+    plt.close()
+
+def relative_log2FC(raw_file_path, smoothing_window=100):
+    """
+    Takes raw readcounts and calculates readcount relative to control and plots a moving 
+    average of the log2 fold change by position.
+    """
+    # Load and normalize the data
+    df = pd.read_csv(raw_file_path)
+    bins = df['Bins']
+    counts_data = df.drop(columns=['Bins'])
+    normalized_data = counts_data / counts_data.sum(axis=0)
+
+    # Identify "test" sample and matching "control"
+    test_columns = [col for col in normalized_data.columns if "test" in col]
+    control_columns = {col.replace("test", "control"): col for col in test_columns}
+
+    relative_data = pd.DataFrame()
+    for control_col, test_col in control_columns.items():
+        if control_col in normalized_data.columns:
+            # Compute the ratio and store in a new column
+            relative_data[test_col] = normalized_data[test_col] / normalized_data[control_col]
+    relative_df = pd.concat([bins, relative_data], axis=1)
+    relative_df.to_csv("relative_change.csv", index=False)
+    
+    if len(relative_df.columns) > 1: # Plot only if there are more than the Bins column
+        plt.figure(figsize=(10, 6))
+        for column in relative_df.columns[1:]:
+            # Wrap data by appending and prepending data for smoothing
+            padded_data = np.concatenate(
+                (relative_df[column].iloc[-smoothing_window:].values, 
+                relative_df[column].values, 
+                relative_df[column].iloc[:smoothing_window].values)
+            )
+            padded_data = pd.DataFrame(padded_data)
+            
+            # Replace -inf values with NaN and interpolate to ignore them during smoothing
+            padded_data = padded_data.replace([np.inf, -np.inf, 0, ''], np.nan)
+            interpolated_padded_values = padded_data.interpolate(
+                method='spline', 
+                order=3
+            ).rolling(
+                window=smoothing_window, 
+                center=True
+            ).mean()
+            smoothed_values = interpolated_padded_values[smoothing_window:-smoothing_window].values
+            log2fc_values = np.log2(smoothed_values)
+            plt.plot(bins, log2fc_values, label=f"{column}")
+            
+        # Plot aesthetics
+        plt.xlabel('Position (Mb)')
+        plt.ylabel('Relative Log2 Fold Change')
+        plt.title('Change in Normalised Reads from Control')
+        plt.legend(title='Sample', bbox_to_anchor=(1.04, 1), loc="upper left")
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.tight_layout()
+        plt.savefig("relative_change.png")
+        plt.close()
+    else:
+        return
     
 def plot_JS_div(raw_file_path):
     """
-    Normalise data, calculate JS divergence and plot data from binned_reads.csv.
+    Takes raw readcounts, normalises them and calculates the Jensen-Shannon divergence 
+    between samples.
     """
 
-    # Function to calculate Jensen-Shannon divergence as D_JS = D_KL(P||M)/2 + D_KL(Q||M)/2
+    # Function to calculate Jensen-Shannon divergence as D_JS = [D_KL(P||M)/2 + D_KL(Q||M)]/2
     def jensen_shannon_divergence(P, Q):
-        # M is the average of the two distributions
+        # Calculate the average distribution M
         M = 0.5 * (P + Q)
 
-        # KL divergence of P from M and Q from M
+        # Calulate KL divergence of P from M and Q from M
         kl_p_m = np.sum(rel_entr(P, M))
         kl_q_m = np.sum(rel_entr(Q, M))
 
-        # Jensen-Shannon divergence
+        # Return Jensen-Shannon divergence
         return 0.5 * (kl_p_m + kl_q_m)
 
     # Load and normalize the data
@@ -73,44 +135,41 @@ def plot_JS_div(raw_file_path):
     normalized_data = counts_data / counts_data.sum(axis=0)
     col_names = list(counts_data.columns.values)
 
-    # Initialize an empty similarity matrix
+    # Initialize empty similarity matrix
     n_samples = normalized_data.shape[1]
     js_matrix = np.zeros((n_samples, n_samples))
 
     # Calculate the JS_D between each pair of samples
     for i in range(n_samples):
-        for j in range(i + 1, n_samples):  # Calculate for upper triangle only (symmetric)
+        for j in range(i + 1, n_samples):  # Calculate for upper triangle only
             p = normalized_data.iloc[:, i].values
             q = normalized_data.iloc[:, j].values
             js_div_value = jensen_shannon_divergence(p, q)
             js_matrix[i, j] = js_matrix[j, i] = js_div_value  # Matrix is symmetric
 
-    # Create a DataFrame for better visualization
     js_matrix_df = pd.DataFrame(js_matrix, index=col_names, columns=col_names)
 
     # Generate the heatmap
-    plt.figure(figsize=(10, 8))  # Adjust size to fit your data
+    plt.figure(figsize=(10, 8)) 
     sns.heatmap(
         js_matrix_df,
         annot=True,
         cmap="coolwarm",
         linewidths=0.5
     )
+    # Plot aesthetics
     plt.title("Jensen-Shannon Divergence Between Samples")
     plt.xlabel("Sample")
     plt.ylabel("Sample")
     plt.xticks(rotation=45, ha='right')
     plt.yticks(rotation=0, ha='right')
-
-    # Save and show the plot
     plt.tight_layout()
     plt.savefig("jensen_shannon_divergence.png")
-    print("Jensen-Shannon divergence matrix saved to jensen_shannon_divergence.png")
-    plt.show()
+    plt.close()
 
 def raw_read_boxplot(raw_file_path):
     """
-    Generate a boxplot showing the distribution of raw reads.
+    Generates a boxplot showing the distribution of readcount bin sizes.
     """
     raw_df = pd.read_csv(raw_file_path)
     raw_df = raw_df.melt(id_vars=['Bins'], var_name='sample', value_name='read_count')
@@ -131,62 +190,13 @@ def raw_read_boxplot(raw_file_path):
         linewidth = 1,
         inner = None
     )
+    plt.grid(True, linestyle='--', alpha=0.6)
     plt.title("Raw Count of Reads per Bin")
     plt.xlabel("Sample")
     plt.ylabel("Read Count")
-    plt.tight_layout()
     plt.savefig("raw_read_boxplot.png")
-    print("Boxplot saved to raw_read_boxplot.png")
-    plt.show()
-
-def relative_log2FC(raw_file_path, smoothing_window=100):
-    """
-    Generates plot showing log2 fold change in binned reads relative to control by position from 
-    log2FC_binned_reads.csv.
-    """
-    # Load and normalize the data
-    df = pd.read_csv(raw_file_path)
-    test_bins = df['Bins']
-    counts_data = df.drop(columns=['Bins'])
-    normalized_data = counts_data / counts_data.sum(axis=0)
-
-    # Identify "test" sample and matching "control"
-    test_columns = [col for col in normalized_data.columns if "test" in col]
-    control_columns = {col.replace("test", "control"): col for col in test_columns}
-
-    relative_df = pd.DataFrame()
-    for control_col, test_col in control_columns.items():
-        if control_col in normalized_data.columns:
-            # Compute the ratio and store in a new column
-            relative_df[test_col] = normalized_data[test_col] / normalized_data[control_col]
-    
-    if relative_df.columns > 1: # Plot only if there are more than 1 columns
-        for column in relative_df.columns[1:]:
-        # Wrap data by appending and prepending data for smoothing
-            padded_data = np.concatenate(
-                (relative_df[column].iloc[-smoothing_window:].values, 
-                relative_df[column].values, 
-                relative_df[column].iloc[:smoothing_window].values)
-            )
-            smoothed_padded_values = pd.Series(padded_data)\
-                .rolling(
-                    window = smoothing_window, 
-                    center = True)\
-                .mean()
-            smoothed_values = smoothed_padded_values[smoothing_window:-smoothing_window].values
-
-            plt.plot(test_bins, smoothed_values, label=f"{column}") 
-        # Plot aesthetics
-        plt.xlabel('Position (Mb)')
-        plt.ylabel('Normalised Test Read Count / Normalised Control Read Count')
-        plt.title('Relative Change in Normalised Reads from Control')
-        plt.legend(title='Columns', bbox_to_anchor=(1.04, 1), loc="upper left")
-        plt.grid(True, linestyle='--', alpha=0.6)
-        plt.savefig("relative_change_to_control.png")       
-    else:
-        return
+    plt.close()
         
-
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Visualize read log2FC and Jensen-Shannon Divergence.")
@@ -202,8 +212,6 @@ def main():
         default=1, 
         help="Smoothing window size for log2FC plot."
         )
-
-    # Parse arguments
     args = parser.parse_args()
 
     # Generate plots
@@ -211,12 +219,12 @@ def main():
         args.normalised_file_path, 
         smoothing_window=args.smoothing_window
     )
-    plot_JS_div(args.raw_file_path)
-    raw_read_boxplot(args.raw_file_path)
     relative_log2FC(
         args.raw_file_path, 
         smoothing_window=args.smoothing_window
     )
+    plot_JS_div(args.raw_file_path)
+    raw_read_boxplot(args.raw_file_path)
 
 if __name__ == "__main__":
     main()
