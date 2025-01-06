@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #author:        :Gregory Wickham
 #date:          :20241119
-#version        :1.2.
+#version        :1.2
 #date modified: :20241125
 #desc           :Align reads against reference with Bowtie2
-#usage		    :bash bowtie2_alignment.sh <reads_dir> <bowtie2_index(.fasta)> <outdir>
+#usage		    :bash ./bowtie2_alignment.sh <reads_dir> <bowtie2_index(.fasta)> <outdir>
 #===========================================================================================================
 # Exit script on error
 set -exuo pipefail
@@ -23,7 +23,7 @@ fi
 # Create the Bowtie2 ref index if not already created
 if [ -f "${BOWTIE2_REF}".1.bt2 ]; then
     cp "${BOWTIE2_REF}".*.bt2 . #copy index file to nextflow workdir
-    echo "Bowtie2 index $($BOWTIE2_REF) found"
+    echo "Bowtie2 index ${BOWTIE2_REF} found"
 elif [ -f "${BOWTIE2_REF%.f*}".f* ]; then
     echo "Creating new index $BOWTIE2_REF"
     bowtie2-build $BOWTIE2_REF ${BOWTIE2_REF%.f*}
@@ -39,7 +39,7 @@ for R1 in $READS_DIR/*1.fastq*; do
     R2=${R1/1.fastq/2.fastq}  # Get R2 file name from R1
     if [ ! -f "$R2" ]; then
         echo "ERROR: No R2 file for $(basename $R1). Skipping read."
-        > $OUTPUT_DIR/errors.txt
+        >> $OUTPUT_DIR/errors.txt
         echo "$R1 missing R2 pairmate" >> $OUTPUT_DIR/errors.txt
         continue
     fi
@@ -69,4 +69,6 @@ for R1 in $READS_DIR/*1.fastq*; do
 
     echo "Alignment complete. Output written to $OUTPUT_DIR/$SAMPLE_NAME.bam"
 done
+
+# Explicitly copy index file to nextflow workdir
 cp "${BOWTIE2_REF}".*.bt2 . #copy index file to nextflow workdir
