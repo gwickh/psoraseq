@@ -11,36 +11,60 @@ import arviz as az
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.interpolate import CubicSpline
 
-data = pd.read_csv('../../../relative_change.csv')
+class GPTrainer:
+    def __init__(self, data_path, window_size=100):
+        self.data_path = data_path
+        self.window_size = window_size
+        self.data = pd.read_csv(data_path)
+        self.x_values = np.array(self.data.iloc[:, 0], dtype=int)
+        self.y_values = self._preprocess_y_values(np.array(self.data.iloc[:, 1], dtype=np.float32))
+        self.x_binned = np.floor(np.arange(len(self.y_values)) / window_size) * window_size
 
-#get values
-x_values = np.array(data.iloc[:, 0], dtype=int)[::4]
-x_normalized = (x_values - min(x_values)) / (max(x_values) - min(x_values))
+    def _preprocess_y_values(self, y):
+        y = np.nan_to_num(y, nan=np.nan, posinf=np.nan, neginf=np.nan)
+        y = pd.Series(y).replace(0, np.nan)
+        y_interpolated = y.interpolate(method='spline', order=3).to_numpy()
+        y_rolling = pd.Series(y_interpolated).rolling(
+            window=self.window_size, 
+            center=True,
+            min_periods=1
+        ).mean().to_numpy()
+        return y_rolling
 
-y = np.array(data.iloc[:, 1], dtype=np.float32)
-y = np.nan_to_num(y, nan=np.nan, posinf=np.nan, neginf=np.nan)
-y = pd.Series(y)
-y = y.replace(0, np.nan)
-y_interpolated = y.interpolate(method='spline', order=3).to_numpy()[::4]
+    def train_model(self):
+        with pm.Model() as self.model:
+            variance = pm.HalfNormal('variance', sigma=1)
+            trend_kernel = pm.gp.cov.ExpQuad(1, ls=10)
+            periodic_kernel = pm.gp.cov.Periodic(1, period=5.0, ls=10)
+            cov = variance * (trend_kernel + periodic_kernel)
+            gp = pm.gp.Latent(cov_func=cov)
 
+            f = gp.prior("f", X=self.x_binned[:, None])
 
-#Create latent GP model    
-with pm.Model() as model:
-    variance = pm.HalfNormal('variance', sigma=1)
-    trend_kernel = pm.gp.cov.ExpQuad(1, ls=10)  # Trend kernel
-    periodic_kernel = pm.gp.cov.Periodic(1, period=5.0, ls=10)  # Periodic kernel
-    cov = variance * (trend_kernel + periodic_kernel)
-    gp = pm.gp.Latent(cov_func=cov)
+            sigma = pm.HalfNormal("sigma", sigma=100)
+            nu = 1 + pm.Gamma("nu", alpha=2, beta=0.1)
+            y_ = pm.StudentT("y", mu=f, lam=1.0 / sigma, nu=nu, observed=np.log2(self.y_values))
 
-    f = gp.prior("f", X=x_values[:, None])
+            self.approx = pm.fit(n=1000, method='advi')
 
-    sigma = pm.HalfNormal("sigma", sigma=100)
-    nu = 1 + pm.Gamma(
-        "nu", alpha=2, beta=0.1
-    )
-    y_ = pm.StudentT("y", mu=f, lam=1.0 / sigma, nu=nu, observed=y_interpolated)
+    def plot_results(self):
+        from pymc.gp.util import plot_gp_dist
 
-    trace = pm.sample(1000, chains=4, tune=500, target_accept=0.9, max_treedepth=10)
+        fig = plt.figure(figsize=(10, 4))
+        ax = fig.gca()
+        f_post = az.extract(self.approx, var_names="f").transpose("sample", ...)
+        plot_gp_dist(ax, f_post, self.x_values[:, None])
+
+        ax.plot(self.x_values[:, None], self.y_values, "ok", ms=3, label="Observed data")
+
+        plt.xlabel("X")
+        plt.ylabel("True f(x)")
+        plt.title("Posterior distribution over $f(x)$ at the observed values")
+        plt.legend()
+        plt.show()
+
+if __name__ == "__main__":
+    trainer = GPTrainer(data_path='../../../relative_change.csv')
+    trainer.train_model()
+    trainer.plot_results()
