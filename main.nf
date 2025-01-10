@@ -81,7 +81,8 @@ process BIN_READS {
     path readlist
 
     output:
-    path "*.csv", emit: binned
+    path "*raw*.csv", emit: binned
+    path "*log2FC*.csv", emit: binned_norm
 
     publishDir file(params.output_dir).toString(), 
         mode: 'copy',
@@ -90,26 +91,6 @@ process BIN_READS {
     script:
     """
     python3 ${projectDir}/bin/python_scripts/bin_aligned_reads.py $readlist
-    """
-}
-
-// normalise reads
-process NORMALISE_READS {
-    conda "${projectDir}/environment.yml"
-
-    input:
-    path binned
-
-    output:
-    path "*.csv", emit: binned_norm
-
-    publishDir file(params.output_dir).toString(), 
-        mode: 'copy',
-        pattern: "*.csv"
-
-    script:
-    """
-    python3 ${projectDir}/bin/python_scripts/normalise_bins.py $binned
     """
 }
 
@@ -160,11 +141,9 @@ workflow {
 
     binning = BIN_READS(tabular_alignment.readlist)
 
-    normalisation = NORMALISE_READS(binning.binned)
-
     MAKE_PLOTS(
         binning.binned, 
-        normalisation.binned_norm
+        binning.binned_norm
     )
 
 }
