@@ -6,6 +6,7 @@ Installation:
     sudo apt-get install -y openjdk-11-jdk build-essential gcc zip unzip zlib1g-dev make
     curl -s https://get.sdkman.io | bash
     source "/home/ubuntu/.sdkman/bin/sdkman-init.sh"
+    sdk install java 17.0.10-tem
 
     wget -qO- https://get.nextflow.io | bash
     sudo mv nextflow /usr/local/bin/
