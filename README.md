@@ -2,12 +2,14 @@
 Pipeline for psoralen sequencing analysis
 ```
 Installation:
-    sudo apt update
-    sudo apt-get install -y openjdk-11-jdk build-essential gcc zlib1g-dev make
+    sudo apt update 
+    sudo apt-get install -y openjdk-11-jdk build-essential gcc zip unzip zlib1g-dev make
+    curl -s https://get.sdkman.io | bash
+    source "/home/ubuntu/.sdkman/bin/sdkman-init.sh"
 
     wget -qO- https://get.nextflow.io | bash
     sudo mv nextflow /usr/local/bin/
-    nextflow -version
+    nextflow -version #tested with nexflow 24.10.5
     
     git clone https://github.com/gwickh/psoraseq.git
 
