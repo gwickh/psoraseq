@@ -26,7 +26,7 @@ if [ -f "${BOWTIE2_REF}".1.bt2 ]; then
     echo "Bowtie2 index ${BOWTIE2_REF} found"
 elif [ -f "${BOWTIE2_REF%.f*}".f* ]; then
     echo "Creating new index $BOWTIE2_REF"
-    bowtie2-build $BOWTIE2_REF ${BOWTIE2_REF%.f*}
+    bowtie2-build "${BOWTIE2_REF%.f*}".f* ${BOWTIE2_REF%.f*}
     BOWTIE2_REF="${BOWTIE2_REF%.f*}"
 else 
     echo "ERROR: File $BOWTIE2_REF not found. Exiting"
