@@ -1,19 +1,20 @@
 name: psoraseq_env
 channels:
-  - conda-forge
-  - bioconda
   - defaults
+  - bioconda
+  - conda-forge
 dependencies:
+  - mamba
   - python=3
   - bowtie2
   - samtools
   - pip
   - pip:
-      - pyarrow
-      - pandas
-      - numpy
-      - pysam
-      - scipy
-      - seaborn
-      - matplotlib
-      - argparse
+    - pyarrow
+    - pandas
+    - numpy
+    - pysam
+    - scipy
+    - seaborn
+    - matplotlib
+    - argparse

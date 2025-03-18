@@ -8,9 +8,9 @@ Installation:
     source "/home/ubuntu/.sdkman/bin/sdkman-init.sh"
     sdk install java 17.0.10-tem
 
-    wget -qO- https://get.nextflow.io | bash
+    wget -qO- https://github.com/nextflow-io/nextflow/releases/download/v24.10.4/nextflow| bash
     sudo mv nextflow /usr/local/bin/
-    nextflow -version #tested with nexflow 24.10.5
+    nextflow -version #tested with nexflow 24.10.4
     
     git clone https://github.com/gwickh/psoraseq.git
 
