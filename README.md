@@ -23,8 +23,11 @@ Usage:
 
 Options:
     --reads_dir             Path to directory containing paired reads.
+                            Reads should be in the format {name}_{pairmate 1/2}.{fastq/fastq.gz}
+                            (OPTIONAL) Reads with the same name but containing the prefix "sample" will be plotted relative to reads prefixed as "control"
     --bowtie2_ref           Path to Bowtie2 index or reference .fasta file to make new index
     --output_dir            Path to output directory.
+                            Directory will be created if does not already exist
     --ori_centric_offset    (OPTIONAL) Numeric offset to make coordinates origin-centric (default: 0).
     --smoothing_window      (OPTIONAL) Smooth trendline with binsized sliding window (default: 1)
     --skip_alignment        (OPTIONAL) Skip alignment step and use precomputed BAM/BAI files in output directory.
