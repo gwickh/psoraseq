@@ -23,7 +23,7 @@ Usage:
 
 Options:
     --reads_dir             Path to directory containing paired reads.
-                            Reads should be in the format {name}_{pairmate 1/2}.{fastq/fastq.gz}
+                            Reads should be in the format {name}_R{1/2}.{fastq/fastq.gz}
                             (OPTIONAL) Reads with the same name but containing the prefix "sample" will be plotted relative to reads prefixed as "control"
     --bowtie2_ref           Path to Bowtie2 index or reference .fasta file to make new index
     --output_dir            Path to output directory.
