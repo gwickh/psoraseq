@@ -105,7 +105,7 @@ class PlotFunctions:
     def relative_log2FC(self):
         """Plot relative log2 fold change between test and control samples."""
         df = self.plot_utils.read_csv(self.raw_file_path)
-        bins = df['Bins']
+        bins = df[['Bins']]
         counts_data = df.drop(columns=['Bins'])
         normalized_data = counts_data / counts_data.sum(axis=0)
 
