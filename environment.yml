@@ -4,7 +4,6 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - mamba
   - python=3
   - bowtie2
   - samtools
@@ -17,4 +16,3 @@ dependencies:
     - scipy
     - seaborn
     - matplotlib
-    - argparse
