@@ -34,5 +34,5 @@ Options:
     --help                  Display help message.
 
 Example:
-    nextflow run psoraseq/main.nf --reads_dir psoraseq/test_files/reads/ --bowtie2_ref psoraseq/test_files/e_coli_K12 --output_dir output_test --ori_centric_offset 3925744 --smoothing_window 100
+    nextflow run psoraseq/main.nf --reads_dir psoraseq/test_files/test_reads/ --bowtie2_ref psoraseq/test_files/e_coli_K12_ref --output_dir output_test --ori_centric_offset 3925744 --smoothing_window 100
 ```
